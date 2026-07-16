@@ -1,0 +1,12 @@
+{
+  "$schema": "https://anthropic.com/claude-code/plugin.schema.json",
+  "name": "pi-brain",
+  "version": "1.0.0",
+  "description": "Three-layer memory system (Working→Episodic→Semantic) using an Obsidian vault as Claude Code's persistent brain. Bundles the pi-brain skill, session lifecycle hooks, and vault setup scripts. Requires PI_BRAIN_VAULT_PATH environment variable.",
+  "author": {
+    "name": "TexasToast"
+  },
+  "license": "MIT",
+  "skills": "./skills/",
+  "hooks": "./hooks/hooks.json"
+}
