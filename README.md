@@ -7,7 +7,8 @@ This is the Claude Code port of the [Hermes pi-brain plugin](https://github.com/
 ## What It Does
 
 - **SessionStart hook**: Creates a `Working/<session-id>.md` note in the vault and injects context telling Claude to run the bootstrap ritual.
-- **SessionEnd hook**: Appends a session-end marker so the heartbeat knows the note is ready for distillation.
+- **SessionEnd hook**: Appends a session-end marker (once, even if the event fires more than once) so the note is known to be ready for distillation.
+- **`scripts/distill.sh`**: Lists this client's ended-but-undistilled Working notes. Necessary because the Hermes heartbeat distils from Hermes' `state.db`, which never contains a Claude Code session — without this, notes written here would accumulate in a shared vault and never reach Layer 2. It selects **only** notes marked `client: claude-code`; a note with no `client` key is a Hermes note that predates the marker and is left alone.
 - **pi-brain skill**: Full protocol — bootstrap ritual (read `index.md` + latest daily briefing), vault-first search discipline, live capture protocol, metadata schema, folder topology, and pitfalls.
 - **Slash commands**: `/vault-status` and `/vault-doctor` for quick diagnostics.
 - **Templates**: 10 Obsidian note templates (decision, daily, episodic, fact, pattern, plan, preference, research, todo, working).
@@ -30,6 +31,34 @@ git clone https://github.com/texastoast/pi-brain-claude-code.git ~/.claude/skill
 ```
 
 The plugin auto-loads as `pi-brain@skills-dir` on the next Claude Code session. Run `/reload-plugins` inside Claude Code to load it immediately.
+
+### Register the hooks explicitly — the skills-dir drop-in is not enough
+
+Observed on this machine 2026-08-03: cloning into `~/.claude/skills/pi-brain` makes the **skill and slash commands** discoverable (they appear namespaced as `pi-brain:*`), but the plugin gets no entry in `~/.claude/plugins/installed_plugins.json`, so **`hooks/hooks.json` is never loaded and neither hook ever fires**. `${CLAUDE_PLUGIN_ROOT}` is also undefined in that state. The symptom is a plugin that looks installed and does nothing — no working notes, no bootstrap injection — and because both hooks are written to no-op silently, nothing complains.
+
+So register them by absolute path in `~/.claude/settings.json`, appending to any hooks already there rather than replacing them:
+
+```jsonc
+"hooks": {
+  "SessionStart": [
+    { "hooks": [
+      /* ...your existing SessionStart hooks... */
+      { "type": "command",
+        "command": "bash \"/Users/dhorne/.claude/skills/pi-brain/hooks-handlers/session-start.sh\"",
+        "timeout": 10 }
+    ]}
+  ],
+  "SessionEnd": [
+    { "hooks": [
+      { "type": "command",
+        "command": "bash \"/Users/dhorne/.claude/skills/pi-brain/hooks-handlers/session-end.sh\"",
+        "timeout": 10 }
+    ]}
+  ]
+}
+```
+
+Verify by starting a session and checking that `Working/<session-id>.md` appears in the vault. If it does not, the hook is not registered — do not assume it is working because the skill is listed.
 
 ### Verify installation
 
