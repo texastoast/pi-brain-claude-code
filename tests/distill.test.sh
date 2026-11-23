@@ -72,6 +72,27 @@ session-id: mine-ended
 EOF
 check "a note whose Episodic note exists is skipped" "" "$(ids)"
 
+echo "== an untouched template has nothing to distil =="
+cat > "$V/Working/mine-empty.md" <<'EOF'
+---
+type: working
+client: claude-code
+session-id: mine-empty
+---
+
+# Working — 2026-08-01
+
+## Live Capture
+
+<!-- Decisions, plans, findings, corrections written as they happen this session -->
+
+## Session End — 2026-08-01T17:00:00-0500
+
+Session ended. Ready for distillation.
+EOF
+check "an ended note with only headings and comments is skipped" "" "$(ids)"
+rm -f "$V/Working/mine-empty.md"
+
 echo "== several at once, in order =="
 rm -f "$V/Episodic"/*.md
 note mine-b "client: claude-code" ended

@@ -64,6 +64,14 @@ if os.path.isdir(episodic):
         if sid:
             done.add(sid)
 
+def captured_nothing(text):
+    body = text.split("\n---", 1)[1] if text.startswith("---") else text
+    body = re.sub(r"<!--.*?-->", "", body, flags=re.S)
+    return all(
+        not line.strip() or line.startswith("#") or line.startswith("Session ended.")
+        for line in body.split("\n")[1:]
+    )
+
 ready = []
 for name in sorted(os.listdir(working)):
     if not name.endswith(".md"):
@@ -81,7 +89,7 @@ for name in sorted(os.listdir(working)):
     if not re.search(r"^## Session End", text, re.M):
         continue  # still live
     sid = fm.get("session-id") or name[:-3]
-    if sid in done:
+    if sid in done or captured_nothing(text):
         continue
     ready.append({"session_id": sid, "path": path, "created": fm.get("created", "")})
 

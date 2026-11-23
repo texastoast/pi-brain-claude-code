@@ -9,6 +9,9 @@ set -euo pipefail
 # Read the event JSON from stdin
 EVENT=$(cat)
 
+# Scheduled and `claude -p` runs have a job of their own; keep the vault out of them.
+[ "${CLAUDE_CODE_SESSION_ATTENDED:-}" = "0" ] && exit 0
+
 # Resolve vault path
 VAULT="${PI_BRAIN_VAULT_PATH:-}"
 
