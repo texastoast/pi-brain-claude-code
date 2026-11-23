@@ -110,7 +110,6 @@ fi
 jq -n --arg vault "$VAULT" --arg sid "$SESSION_ID" --arg pending "$PENDING_NOTE" '{
   hookSpecificOutput: {
     hookEventName: "SessionStart",
-    context: ("[Pi Brain] You have a three-layer memory vault at: \($vault)\nLoad the pi-brain skill and run the bootstrap ritual: read index.md and the latest Daily briefing from the vault.\nBefore using web_search or terminal for research, always check the vault first.\nA working note has been created for this session (\($sid)) in Working/. Capture decisions, findings and corrections into its Live Capture section as they happen — an empty working note is the failure mode this system has already had." + $pending),
-    tag: "pi-brain-session-start"
+    additionalContext: ("[Pi Brain] You have a three-layer memory vault at: \($vault)\nLoad the pi-brain skill and run the bootstrap ritual: read index.md and the latest Daily briefing from the vault.\nBefore using web_search or terminal for research, always check the vault first.\nA working note has been created for this session (\($sid)) in Working/. Capture decisions, findings and corrections into its Live Capture section as they happen — an empty working note is the failure mode this system has already had." + $pending)
   }
 }'
