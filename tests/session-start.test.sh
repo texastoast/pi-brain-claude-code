@@ -26,5 +26,10 @@ check "message is in additionalContext" "true" "$(echo "$OUT" | jq -r '.hookSpec
 check "no keys Claude Code does not read" "additionalContext,hookEventName" "$(echo "$OUT" | jq -r '.hookSpecificOutput | keys | join(",")')"
 check "working note is created" "yes" "$([ -f "$V/Working/test-session.md" ] && echo yes || echo no)"
 
+echo "== it stays out of unattended runs =="
+OUT=$(echo '{"session_id":"headless-session"}' | CLAUDE_CODE_SESSION_ATTENDED=0 PI_BRAIN_VAULT_PATH="$V" bash "$HOOK")
+check "an unattended session gets no message" "" "$OUT"
+check "an unattended session gets no working note" "no" "$([ -f "$V/Working/headless-session.md" ] && echo yes || echo no)"
+
 printf '\n%d passed, %d failed\n' "$PASS" "$FAIL"
 [ "$FAIL" -eq 0 ]
