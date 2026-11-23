@@ -39,14 +39,24 @@ if [ ! -f "$NOTE_PATH" ]; then
   exit 0
 fi
 
-DATETIME=$(date -u +%Y-%m-%dT%H:%M:%S)
+DATETIME=$(TZ=America/Chicago date +%Y-%m-%dT%H:%M:%S%z)
 
-# Append session-end marker
+# Appended only once. Claude Code can fire SessionEnd more than once for a single
+# session (clear, then exit), and a note carrying three "Session End" stanzas reads
+# like three sessions to anything parsing the vault.
+if grep -q '^## Session End' "$NOTE_PATH" 2>/dev/null; then
+  echo '{}'
+  exit 0
+fi
+
+# Says "distillation" without naming the heartbeat: Hermes' heartbeat queries its
+# own state.db for closed sessions, and a Claude Code session is not in there. These
+# notes are distilled by scripts/distill.sh in this plugin instead.
 cat >> "$NOTE_PATH" << EOF
 
 ## Session End — ${DATETIME}
 
-Session ended. Ready for heartbeat distillation.
+Session ended. Ready for distillation.
 EOF
 
 # Output (empty JSON = no special action, just exit cleanly)

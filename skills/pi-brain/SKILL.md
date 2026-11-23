@@ -27,6 +27,10 @@ ls -la ~/.hermes/pi-brain-vault
 
 If `PI_BRAIN_VAULT_PATH` is unset, fall back to the symlink at `~/.hermes/pi-brain-vault` (points to the local git repo clone of the vault). Every file path passed to `Read`, `Write`, `Edit`, `Grep`, or `Glob` must be the full absolute path under this vault root. Never pass `$PI_BRAIN_VAULT_PATH` to a file tool — it will not expand.
 
+**On this machine the env var is set in `~/.claude/settings.json` under `env`, and the symlink does not exist.** That matters: for weeks both were absent, so every hook silently no-opped and Pi Brain appeared installed while doing nothing at all. If Pi Brain ever seems inert again, check the env var first — the failure is designed to be silent, so it will not announce itself.
+
+**Do not create the `~/.hermes/pi-brain-vault` symlink to "fix" a resolution problem.** `~/.hermes` is Syncthing-synced between the Hermes harnesses (its sync-conflict files prove it), so anything written there can propagate to a machine where that path means something different. Configure this client in `~/.claude/`, never in `~/.hermes/`.
+
 ## When to Use
 
 - **Every session start**: run the bootstrap ritual (below).
@@ -97,7 +101,23 @@ When a stable fact is established:
 - One-line fact + evidence wikilink.
 
 ### Working Notes
-A working note is **automatically created by the `SessionStart` hook** when a new session begins — no agent action needed. The `SessionEnd` hook appends a session-end marker so the heartbeat knows it's ready for distillation.
+A working note is **automatically created by the `SessionStart` hook** when a new session begins — no agent action needed. The `SessionEnd` hook appends a session-end marker so it is known to be ready for distillation.
+
+Filling it in **is** agent action, and it is the whole point. An empty working note is not a neutral outcome: this vault already contains a run of them, and they are indistinguishable from sessions that never happened. Write to Live Capture as things happen rather than intending to summarise at the end — sessions do not reliably get a tidy ending.
+
+## Distillation — Working → Episodic (this client only)
+
+Layer 2 does not happen by itself here. Hermes distils its own sessions with `pi-brain-heartbeat.py`, which queries Hermes' `state.db` for closed sessions; a Claude Code session is not in that database, so nothing else will ever distil these notes.
+
+When the SessionStart context says earlier sessions are undistilled:
+
+1. Run `scripts/distill.sh`. It prints a JSON array of `{session_id, path, created}`, or nothing at all when there is nothing to do.
+2. **Distil only what that script returns.** It selects only notes marked `client: claude-code`. Three Hermes harnesses share this vault and their notes belong to their own distiller — a note with no `client` key is a Hermes note that predates the marker, and it is not yours. Never widen the selection by hand.
+3. For each note, read it and write `Episodic/<YYYY-MM-DD> <Title>.md` with `session-id`, `session-date`, `summary`, and `promoted-to: []`. The `session-id` is what marks it done, so it must match exactly or the note will be distilled again.
+4. Promote anything durable to `Semantic/` per the Live Capture rules, and add the wikilink to `promoted-to`.
+5. Leave the Working note in place. `distill.sh` will not return it again once its Episodic note exists, and deleting it destroys the evidence trail.
+
+A session with nothing worth distilling still gets an Episodic note saying so, in one line. Otherwise it stays "pending" forever and is re-offered every session.
 
 ## Note Size Rule
 
